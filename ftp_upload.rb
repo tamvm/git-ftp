@@ -1,20 +1,31 @@
-require "#{File.expand_path(File.dirname(__FILE__))}/better_ftp.rb"
+require 'debugger'
+require 'yaml'
 
-FTP_HOST = "FTP_HOST"
-FTP_USERNAME = "FTP_USERNAME"
-FTP_PASSWORD = "FTP_PASSWORD"
-PUBLIC_HTML = "/"
+require "#{File.expand_path(File.dirname(__FILE__))}/better_ftp.rb"
 
 module FTPExt
   def chdirc(dir)
-    self.chdir dir
+    chdir dir
   rescue Net::FTPPermError
-    self.mkdir_p dir
-    self.chdir dir
+    mkdir_p dir
+    chdir dir
+  end
+
+  def try_rm(path)
+    rm path
+  rescue Net::FTPPermError
+    puts "#{path} not exists"
   end
 end
 
-ftp = BetterFTP.new(FTP_HOST, FTP_USERNAME, FTP_PASSWORD)
+config = YAML.load_file "#{File.expand_path(File.dirname(__FILE__))}/ftp_config.yml"
+debug = config["debug"]
+ftp_host = config["ftp_host"]
+ftp_username = config["ftp_username"]
+ftp_password = config["ftp_password"]
+ftp_public_html = config["ftp_public_html"]
+
+ftp = BetterFTP.new(ftp_host, ftp_username, ftp_password)
 ftp.extend(FTPExt)
 
 ftp.passive = true
@@ -30,10 +41,16 @@ result = `git show --pretty='format:' --name-only #{sha_from}..#{sha_to}`
 
 files = result.strip.split("\n").reject { |file| file.empty? }
 files.each do |file|
-  puts "- Uploading #{file}"
-  ftp.chdirc(PUBLIC_HTML + File.dirname(file))
-  ftp.putbinaryfile(file, File.basename(File.basename(file)))
-  puts ftp.last_response
+  remote_path = ftp_public_html + File.dirname(file)
+  if File.exists? file
+    puts "- Uploading #{file}" if debug
+    ftp.chdirc(remote_path)
+    ftp.putbinaryfile(file, File.basename(File.basename(file)))
+  else
+    puts "- Deleting #{file}" if debug
+    ftp.try_rm remote_path
+  end
+  puts ftp.last_response if debug
 end
 ftp.quit
 

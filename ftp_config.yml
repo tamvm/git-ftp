@@ -1,0 +1,6 @@
+debug: true
+ftp_host: ftp_host
+ftp_username: ftp_username
+ftp_password: ftp_password
+ftp_public_html: ftp_public_html
+
