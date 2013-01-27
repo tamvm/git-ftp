@@ -18,14 +18,20 @@ module FTPExt
   end
 end
 
-config = YAML.load_file "#{File.expand_path(File.dirname(__FILE__))}/ftp_config.yml"
+config = YAML.load_file "#{File.expand_path(Dir.pwd)}/ftp_config.yml"
 debug = config["debug"]
 ftp_host = config["ftp_host"]
 ftp_username = config["ftp_username"]
 ftp_password = config["ftp_password"]
 ftp_public_html = config["ftp_public_html"]
 
-ftp = BetterFTP.new(ftp_host, ftp_username, ftp_password)
+begin
+  ftp = BetterFTP.new(ftp_host, ftp_username, ftp_password)
+rescue Net::FTPPermError => e
+  puts e.message
+  puts e.backtrace.join("\n")
+  abort
+end
 ftp.extend(FTPExt)
 
 ftp.passive = true
@@ -53,4 +59,6 @@ files.each do |file|
   puts ftp.last_response if debug
 end
 ftp.quit
+
+`say "Upload FTP Done"`
 
