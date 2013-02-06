@@ -5,6 +5,10 @@ require "#{File.expand_path(File.dirname(__FILE__))}/s3_uploader.rb"
 
 config = YAML.load_file "#{File.expand_path(Dir.pwd)}/ftp_config.yml"
 s3_config = config["s3"]
+if s3_config.empty?
+  abort "Add credentials to ftp_config.yml file"
+end
+
 key = s3_config["key"]
 secret = s3_config["secret"]
 bucket = s3_config["bucket"]
