@@ -16,6 +16,22 @@ module FTPExt
   rescue Net::FTPPermError
     puts "#{path} not exists"
   end
+
+  def upload_file(local_file, ftp_public_html=nil)
+    remote_path = ftp_public_html + File.dirname(local_file)
+    if File.directory? local_file
+      upload_dir(local_file, ftp_public_html)
+    else
+      chdirc(remote_path)
+      putbinaryfile(local_file, File.basename(local_file))
+    end
+  end
+
+  def upload_dir(dir, ftp_public_html=nil)
+    Dir["#{dir}/**/*"].each do |inner_file|
+      upload_file(inner_file, ftp_public_html)
+    end
+  end
 end
 
 def connect_ftp(ftp_host, ftp_username, ftp_password)
@@ -55,8 +71,7 @@ files.each do |file|
     remote_path = ftp_public_html + File.dirname(file)
     if File.exists? file
       puts "- Uploading #{file}" if debug
-      ftp.chdirc(remote_path)
-      ftp.putbinaryfile(file, File.basename(File.basename(file)))
+      ftp.upload_file(file, ftp_public_html)
     else
       puts "- Deleting #{file}" if debug
       ftp.try_rm remote_path
