@@ -1,4 +1,5 @@
 require "fog"
+require "active_support/core_ext"
 
 class S3Uploader
   attr_accessor :path
