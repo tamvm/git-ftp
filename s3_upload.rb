@@ -14,6 +14,7 @@ secret = s3_config["secret"]
 bucket = s3_config["bucket"]
 include_dirs = s3_config["include_dirs"]
 region = s3_config["region"]
+exclude_exts = s3_config["exclude_exts"]
 puts region
 
 sha_from = ARGV[0]
@@ -28,6 +29,8 @@ result = `git show --pretty='format:' --name-only #{sha_from}..#{sha_to}`
 s3_instance = S3Uploader.instance(key, secret, bucket, region)
 files = result.strip.split("\n").reject { |file| file.empty? }
 files.each do |file|
+  next if !exclude_exts.empty? && exclude_exts.include?(File.extname(file).gsub(".", ""))
+
   if File.exists? file
     s3_instance.upload(file, file)
     puts "- Uploading #{file}"
